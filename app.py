@@ -1,5 +1,6 @@
 import dash
 
+
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 import pandas as pd
@@ -11,49 +12,62 @@ app = dash.Dash(__name__)
 
 # App layout
 app.layout = html.Div([
-    html.H1("Interactive DataFrame Table", style={'textAlign': 'center', 'color': '#4CAF50'}),
-    dash_table.DataTable(
-        id='table',
-        columns=[{'name': col, 'id': col} for col in df.columns],
-        data=df.to_dict('records'),
-        filter_action="native",  # Enables filtering on each column
-        sort_action="native",    # Enables sorting by column
-        sort_mode="multi",       # Allows multi-column sorting
-        style_table={'height': '400px', 'overflowY': 'auto'},
-        style_header={
-            'backgroundColor': '#4CAF50',  # Green background
-            'color': 'white',  # White text color
-            'fontWeight': 'bold',  # Bold text
-            'textAlign': 'center',  # Center align header text
-            'fontSize': '16px',  # Font size of header text
-            'border': '1px solid #ddd',  # Border around header
-        },
-        style_cell={
-            'padding': '10px',  # Add padding to cells
-            'textAlign': 'center',  # Center-align the cell content
-            'fontSize': '14px',  # Font size of the cell text
-            'border': '1px solid #ddd',  # Border around cells
-        },
-        style_data_conditional=[
-            {
-                'if': {'state': 'active'},
-                'backgroundColor': '#f4f4f9',  # Highlight active row
-                'color': '#000000',
-            },
-            {
-                'if': {'column_id': 'Score', 'filter_query': '{Score} > 90'},
-                'backgroundColor': '#c8e6c9',  # Green background for high scores
-                'color': '#388e3c',
-            },
-            {
-                'if': {'column_id': 'Score', 'filter_query': '{Score} <= 90'},
-                'backgroundColor': '#ffe0b2',  # Orange background for lower scores
-                'color': '#f57c00',
-            }
-        ],
-    )
+    html.H1("Does rack have this card", style={'textAlign': 'center', 'color': '#4CAF50'}),
+
+    dcc.Input(
+        id='input-text',
+        type='text',
+        placeholder='Enter the card you want to find',
+        debounce=False,
+        value=''
+    ),
+    html.Hr(),
+    dcc.Dropdown(
+        id='drop-down',
+        options=[],
+        searchable=False,
+        placeholder='Select an option...'
+    ),
+    html.Hr(),
+    html.Div(id='results')
+    # Future; I'd like this area to populate with a little table of the relevant data points that or just populate
+    # with the photo of card, with sub text about if its in deck/not, the printing, quantity,  for each printing
+
+
+
+    # IDEA table, where rows can be selected (maybe 70% width) If only one row, auto select selected row will
+    # populate the right side of screen with a photo of the card, and other info as needed (maybe 30% width) will be
+    # based on scryfall api call
 ])
+
+
+@app.callback(
+    Output('drop-down','options'),
+    Input('input-text', 'value')
+)
+def update_suggestions(input_text):
+    if input_text is None or input_text == '':
+        return [{'label': name, 'value': name} for name in df['name'].unique()]
+
+    # Find the closest matches (filter based on input text)
+    matched_options = [name for name in df['name'].unique() if input_text.lower() in name.lower()]
+
+    # Return the options and set the dropdown value to None initially
+    return [{'label': match, 'value': match} for match in matched_options]
+
+
+# Callback to display the selected item after selection
+@app.callback(
+    Output('results', 'children'),
+    Input('drop-down', 'value')
+)
+def display_selected_item(selected_value):
+    if selected_value:
+        return f"Ye"
+    return "No"
 
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
