@@ -1,22 +1,33 @@
 import dash
-
+import pandas as pd
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
-import dash_bootstrap_components as dbc
-import pandas as pd
+from scryfall import get_sf_card, get_card_image
 
-df_safe = pd.read_csv('db/collection_fixed.csv')
+df = pd.read_csv('db/collection_fixed.csv')
 
-df = df_safe[['name', 'set_code', 'foil', 'rarity', 'quantity', 'language']]
+available_binders = ['rares', 'commanders', 'artifacts', 'foreign', 'non basic lands', 'fancy basic lands',
+                     'multicolored', 'white', 'blue', 'black', 'red', 'green']
+
+df['available'] = (df['binder'].isin(available_binders))
+df = df.sort_values(by='name')
+
+visible_columns = ['name', 'set_code', 'foil', 'rarity', 'quantity', 'binder', 'available', 'language']
 
 # Initialize Dash app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__)
 
+# ------------------------------------------------------------------------------
 # App layout
-app.layout = html.Div([
-    html.H1("Does rack have this card", style={'textAlign': 'center', 'color': '#4CAF50'}),
 
+
+app.layout = html.Div([
+    html.H1("Rack Collection Search", style={'textAlign': 'center', 'color': '#4CAF50'}),
+
+    # 1ST ROW:  DATA ENTRY
     html.Div([
+
+        # TEXT ENTRY
         dcc.Input(
             id='input-text',
             type='text',
@@ -24,29 +35,41 @@ app.layout = html.Div([
             className='input-text',
             debounce=False,
             value=''
-        ),
-        dcc.Dropdown(
-            id='drop-down',
-            options=[],
-            searchable=False,
-            placeholder='Select an option...',
-            className='drop-down'
-        )],
+        )
+        # ,
+
+        # html.H3('matching names dropdown:', style={'color': 'darkgrey'})  ,
+
+        # DROPDOWN ENTRY
+        # dcc.Dropdown(
+        #    id='drop-down',
+        #    options=[],
+        #    searchable=False,
+        #    placeholder='Select an option...',
+        #    className='drop-down'
+        # )
+    ],
         className='row'
     ),
 
+    # 2ND ROW: TABLE AND IMAGE
     html.Div([
+
+        # TABLE CONTAINER
         html.Div(
+
+            # DASH TABLE
             dash_table.DataTable(
                 id='table',
-                columns=[{'name': col, 'id': col} for col in df.columns],
+                columns=[{'name': col, 'id': col} for col in visible_columns],
                 data=df.to_dict('records'),
                 # filter_action="native",  # Enables filtering on each column
                 sort_action="native",  # Enables sorting by column
                 sort_mode="multi",  # Allows multi-column sorting
                 style_table={"width": "100%"},
                 row_selectable='single',
-                page_size=10,
+                cell_selectable=False,
+                page_size=18,
                 style_cell={
                     "textAlign": "left",
                     "padding": "10px",
@@ -70,50 +93,64 @@ app.layout = html.Div([
             ),
             className='table-container'
         ),
+
+        # IMAGE CONTAINER
         html.Div(
+
+            # IMAGE
             html.Img(
-                src="https://via.placeholder.com/800x400",
-                className='image'
+                id='img',
+                src='',  # '"https://via.placeholder.com/800x400",
+                className='image',
+                style={}
             ),
             className='image-container'
         )],
         className='row'
     ),
 
-    # html.Div(id='results')
-    # Future; I'd like this area to populate with a little table of the relevant data points that or just populate
-    # with the photo of card, with sub text about if its in deck/not, the printing, quantity,  for each printing
-
-    # IDEA table, where rows can be selected (maybe 70% width) If only one row, auto select selected row will
-    # populate the right side of screen with a photo of the card, and other info as needed (maybe 30% width) will be
-    # based on scryfall api call
 ], className='big-container')
 
 
+# ----------------------------------------------------------------------------------
+# CALLBACKS
+
+
+# DROP-DOWN SUGGESTION UPDATES
 @app.callback(
-    Output('drop-down', 'options'),
+    # Output('drop-down', 'options'),
+    Output('table', 'data'),
+    Output('table', 'selected_rows'),
     Input('input-text', 'value')
 )
 def update_suggestions(input_text):
     if input_text is None or input_text == '':
-        return [{'label': name, 'value': name} for name in df['name'].unique()]
+        return (  # [{'label': name, 'value': name} for name in df['name'].unique()],
+            df.to_dict('records'), [])
 
     # Find the closest matches (filter based on input text)
     matched_options = [name for name in df['name'].unique() if input_text.lower() in name.lower()]
+    data_out = df[df['name'].isin(matched_options)].copy().to_dict('records')
 
     # Return the options and set the dropdown value to None initially
-    return [{'label': match, 'value': match} for match in matched_options]
+    return (  # [{'label': match, 'value': match} for match in matched_options],
+        data_out, [])
 
 
-# Callback to display the selected item after selection
+# Callback to update the image on the right based on selected row
 @app.callback(
-    Output('results', 'children'),
-    Input('drop-down', 'value')
+    Output('img', 'src'),
+    Output('img', 'style'),
+    Input('table', 'selected_rows'),
+    Input('table', 'data')
 )
-def display_selected_item(selected_value):
-    if selected_value:
-        return f"Ye"
-    return "No"
+def grab_selected_image(selected_rows, data):
+    if not selected_rows:
+        return '', {}
+    target_row = data[selected_rows[0]]
+    card_id = target_row['scryfall_id']
+    new_style = {'width': '488px', 'height': '680px', 'border': '2x solid black'}
+    return get_card_image(card_id, 'normal'), new_style
 
 
 # Callback to handle selected row styling

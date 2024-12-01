@@ -2,42 +2,59 @@ import http.client
 import json
 import requests
 
-api_short = 'api.scryfall.com'
-headers = {
-    "User-Agent": "MTGExampleApp/1.0",  # Your app's name and version
-    "Accept": "application/json;q=0.9,*/*;q=0.8"  # Generic preference for JSON
-}
-
 test_id = "3364dd1b-df21-48a9-9059-f26b992ce7af"  # the card ~Absorb~
-api_conn = http.client.HTTPSConnection(api_short)
 
 
 # using http.client
 def get_sf_card(scryfall_id: str):
+    api_short = 'api.scryfall.com'
+    headers = {
+        "User-Agent": "MTGExampleApp/1.0",  # Your app's name and version
+        "Accept": "application/json;q=0.9,*/*;q=0.8"  # Generic preference for JSON
+    }
+    api_conn = http.client.HTTPSConnection(api_short)
     endpoint = '/cards/' + scryfall_id
     api_conn.request("GET", endpoint, headers=headers)
     response = api_conn.getresponse()
     out = response.read().decode()
-
+    api_conn.close()
     return out
 
 
 # requests version
-
 def get_scry_card(scryfall_id: str):
+    api_short = 'api.scryfall.com'
+    headers = {
+        "User-Agent": "MTGExampleApp/1.0",  # Your app's name and version
+        "Accept": "application/json;q=0.9,*/*;q=0.8"  # Generic preference for JSON
+    }
     address = "https://" + api_short + '/cards/' + scryfall_id
     response = requests.get(address, headers=headers).json()
     return response
 
 
-# -----------------------------------
+# more directly grab the image for display
+def get_card_image(card_id: str, image_type):
+    """
+    :param card_id: scryfall id
+    :param image_type: one of {small, normal, large, png, art_crop, border_crop}
+    :return: image link
+    """
+    info = json.loads(get_sf_card(card_id))
+    if info.get('card_faces'):
+        if info.get('card_faces').__len__() >= 2:
+            return info.get('card_faces')[0].get('image_uris').get(image_type)
+    return info.get('image_uris').get(image_type)
 
+
+# -----------------------------------
 # extraction json info
 
-jsonx = json.loads(get_sf_card(test_id))
-jsonx.get("name")
+# jsonx = json.loads(get_sf_card(test_id))
+# jsonx.get("name")
 
-print(json.dumps(jsonx, indent=2))
+# print(json.dumps(jsonx, indent=2))
+# jsonx.get("image_uris").get("normal")
 
 
 """
@@ -80,6 +97,4 @@ OTHER SITES
 
 """
 
-jsonx.get("image_uris").get("normal")
 
-api_conn.close()
