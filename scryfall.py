@@ -2,6 +2,46 @@ import http.client
 import json
 import requests
 
+"""
+Quick overview of the json dump:
+~ aka what might be helpful ~
+
+GENERAL INFO
+- name:                     name of the card
+- released_at:              date of release
+- scryfall_uri:             link to the scryfall entry
+- image_uris:               specific jpg/png of the card
+    - small / normal / large
+    - png / art_crop / border_crop
+
+GAMEPLAY INFO
+- mana_cost, cmc
+- type_line
+- oracle_text
+- colors, color_identity
+- keywords
+- legalities
+- rulings_uri
+
+FINISH/QUALITY
+- foil, nonfoil, finishes, 
+- oversized, promo, reprint, variation
+- rarity
+- artist, artist_ids
+- border_color, frame, security_stamp, full_art, textless, 
+
+SET-INFO
+- set_id, set, set_name, set_type, set_uri
+- collector_number
+
+OTHER SITES
+- edhrec_rank
+- penny_rank
+- prices
+    - usd, usd_foil, usd_etched
+
+"""
+
 test_id = "3364dd1b-df21-48a9-9059-f26b992ce7af"  # the card ~Absorb~
 
 
@@ -47,6 +87,15 @@ def get_card_image(card_id: str, image_type):
     return info.get('image_uris').get(image_type)
 
 
+# more directly grab the price
+def get_card_prices(card_id: str):
+    info = json.loads(get_sf_card(card_id))
+    usd = info.get('prices').get('usd')
+    usd_hollow = info.get('prices').get('usd_foil')
+    purchase_uri = info.get('purchase_uris').get('tcgplayer')
+    scryfall_uri = info.get('scryfall_uri')
+    return usd, usd_hollow, purchase_uri, scryfall_uri
+
 # -----------------------------------
 # extraction json info
 
@@ -55,46 +104,3 @@ def get_card_image(card_id: str, image_type):
 
 # print(json.dumps(jsonx, indent=2))
 # jsonx.get("image_uris").get("normal")
-
-
-"""
-Quick overview of the json dump:
-~ aka what might be helpful ~
-
-GENERAL INFO
-- name:                     name of the card
-- released_at:              date of release
-- scryfall_uri:             link to the scryfall entry
-- image_uris:               specific jpg/png of the card
-    - small / normal / large
-    - png / art_crop / border_crop
-    
-GAMEPLAY INFO
-- mana_cost, cmc
-- type_line
-- oracle_text
-- colors, color_identity
-- keywords
-- legalities
-- rulings_uri
-
-FINISH/QUALITY
-- foil, nonfoil, finishes, 
-- oversized, promo, reprint, variation
-- rarity
-- artist, artist_ids
-- border_color, frame, security_stamp, full_art, textless, 
-
-SET-INFO
-- set_id, set, set_name, set_type, set_uri
-- collector_number
-
-OTHER SITES
-- edhrec_rank
-- penny_rank
-- prices
-    - usd, usd_foil, usd_etched
-
-"""
-
-

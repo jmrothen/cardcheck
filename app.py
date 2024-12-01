@@ -2,7 +2,7 @@ import dash
 import pandas as pd
 from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
-from scryfall import get_sf_card, get_card_image
+from scryfall import *
 
 df = pd.read_csv('db/collection_fixed.csv')
 
@@ -95,7 +95,7 @@ app.layout = html.Div([
         ),
 
         # IMAGE CONTAINER
-        html.Div(
+        html.Div([
 
             # IMAGE
             html.Img(
@@ -104,6 +104,20 @@ app.layout = html.Div([
                 className='image',
                 style={}
             ),
+
+            html.A(
+                [''],
+                href='',
+                target='_blank',
+                id='prices',
+                className='pricer',
+                style={
+                    "display": "block",  # Makes the link behave like a block element
+                    "textAlign": "center",  # Center aligns the text
+                    "marginTop": "10px"  # Adds spacing between the image and link
+                }
+            )],
+
             className='image-container'
         )],
         className='row'
@@ -141,16 +155,23 @@ def update_suggestions(input_text):
 @app.callback(
     Output('img', 'src'),
     Output('img', 'style'),
+    Output('prices', 'children'),
+    Output('prices', 'href'),
     Input('table', 'selected_rows'),
     Input('table', 'data')
 )
 def grab_selected_image(selected_rows, data):
     if not selected_rows:
-        return '', {}
+        return '', {}, [], ''
     target_row = data[selected_rows[0]]
     card_id = target_row['scryfall_id']
-    new_style = {'width': '488px', 'height': '680px', 'border': '2x solid black'}
-    return get_card_image(card_id, 'normal'), new_style
+    new_style = {'width': '488px', 'height': '680px', 'border': '2x solid black', 'display': "block", "margin":"0 auto"}
+
+    img = get_card_image(card_id, 'normal')
+    prc, hprc, tcg, scr = get_card_prices(card_id)
+    out_text = f"Current Price: {hprc}$" if target_row['foil'] == 'foil' else f"Current Price: {prc}$"
+    out_link = scr  # alternatively tcg
+    return img, new_style, out_text, out_link
 
 
 # Callback to handle selected row styling
