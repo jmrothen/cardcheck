@@ -1,7 +1,7 @@
 import duckdb as db
 import pandas as pd
 
-file_path = "db/ManaBox_Collection.csv"
+file_path = "ManaBox_Collection.csv"
 
 pandas_bozo = pd.read_csv(file_path)
 
