@@ -2,3 +2,5 @@
 *.venv
 /.idea/
 .xml
+/db/ManaBox_Collection.csv
+/db/dbprep.py
