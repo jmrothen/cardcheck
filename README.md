@@ -1,3 +1,3 @@
-# yep
+# Yep
 
-should run with just these files and the requirements on python 3.12.4 
+Simple little project I wrote to create a web-app / dashboard for searching through my card collection
